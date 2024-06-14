@@ -1,0 +1,354 @@
+#include "stdafx.h"
+#include <conio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <clocale>
+#include <string.h>
+#include <malloc.h>
+#include <windows.h>
+
+using namespace std;
+using namespace System;
+using namespace System::IO;
+
+#define ENTER 13
+#define ESC 27
+#define UP 72
+#define DOWN 80
+#define HOME 71
+#define END 79
+#define _SCL_SECURE_NO_DEPRECATE
+#define COUNTMENU 8
+#define LENGHTMENU 55
+
+struct z {
+		char name[20];
+		char mesto[30];
+		long ball;
+		char school[30];
+		char city[30];
+		};
+struct sp {
+		char fio[20];
+		long ball;
+		struct sp* sled;
+		struct sp* pred;
+			};
+const char dan[][55]={
+	"Какой максимальный набранный балл?",
+	"Сколько участников в олимпиаде?   ",
+	"Призёры,набравшие выше 80 баллов  ",
+	"Список всех участников            ",
+	"Участники из данного города       ",
+	"Сложный вопрос. Место и школа     ",
+	"Диаграмма                         ",
+	"Выход                             ",
+};
+
+
+char BlankLine[ ]="                                    ";
+int NC;
+
+
+int menu(int);
+void maxim(struct z*, int);
+void kolvo(struct z *, int);
+void alfalist(struct z*, int, struct sp**);
+void vstavka(struct z*,char*, int, struct sp**);
+void listing(struct z*, int);
+void diagram(struct z*, int, struct sp**);
+void klav(struct z*, int);
+void slozhn(struct z*, int);
+
+
+int main(array<System::String ^> ^args)
+{
+int NC;
+const char dan[][55]={
+	"Какой максимальный набранный балл?",
+	"Сколько участников в олимпиаде?   ",
+	"Призёры,набравшие выше 80 баллов  ",
+	"Список всех участников            ",
+	"Участники из данного города       ",
+	"Сложный вопрос. Место и школа     ",
+	"Диаграмма                         ",
+	"Выход                             ",
+};
+char BlankLine[ ]="                                    ";
+int i, n;
+	FILE *in = 0;
+	struct z *participants = 0;
+		setlocale(LC_CTYPE,"Russian");
+		Console::CursorVisible::set(false);
+		Console::BufferHeight=Console::WindowHeight;
+		Console::BufferWidth=Console::WindowWidth;
+		if((in=fopen("TextFile1.txt","r"))==NULL)
+			{
+			printf("\nФайл TextFile1.txt не открыт !");
+			getch(); exit(1);
+			}
+	fscanf(in,"%d",&NC);
+	participants=(struct z*)malloc(NC*sizeof(struct z));
+	for(i=0;i<NC;i++)
+		fscanf(in,"%s%s%ld%s%s", participants[i].name, participants[i].mesto, &participants[i].ball, participants[i].school, participants[i].city);
+	for(i=0;i<NC;i++)
+		printf("\n%-20s %-20s %-15ld %-20s %-10s", participants[i].name, participants[i].mesto, participants[i].ball, participants[i].school, participants[i].city);
+	getch();
+struct sp* spisok = nullptr;
+while(1)
+	{
+	Console::ForegroundColor=ConsoleColor::White;
+	Console::BackgroundColor=ConsoleColor::Green;
+	Console::Clear();
+	Console::ForegroundColor=ConsoleColor::Green;
+	Console::BackgroundColor=ConsoleColor::White;
+	Console::CursorLeft=40;
+	Console::CursorTop=4;
+	printf(BlankLine);
+	for(i=0;i<7;i++)
+		{
+		Console::CursorLeft=40;
+		Console::CursorTop=i+5;
+		printf(" %s ",dan[i]);
+		}
+	Console::CursorLeft=40;
+	Console::CursorTop=12;
+	printf(BlankLine);
+	n=menu(8);
+	switch(n) {
+				case 1: maxim(participants,NC);break;
+				case 2: kolvo(participants,NC); break;
+				case 3: listing(participants,NC); break;
+				case 4: alfalist(participants,NC,&spisok);break;
+				case 5: klav(participants,NC);break;
+				case 6: slozhn(participants,NC);break;
+				case 7: diagram(participants,NC,&spisok);break;
+				case 8: exit(0);
+
+				}
+	} 
+return(0);
+} 
+int menu(int n)
+{
+const char dan[][55]={
+	"Какой максимальный набранный балл?",
+	"Сколько участников в олимпиаде?   ",
+	"Призёры,набравшие выше 80 баллов  ",
+	"Список всех участников            ",
+	"Участники из данного города       ",
+	"Сложный вопрос. Место и школа     ",
+	"Диаграмма                         ",
+	"Выход                             ",
+};
+char BlankLine[ ]="                                    ";
+int y1=0,y2=n-1;
+char c=1;
+while (c!=ESC)
+	{
+	switch(c) {
+				case DOWN: y2=y1; y1++; break;
+				case UP: y2=y1; y1--; break;
+				case ENTER: return y1+1;
+				case HOME: y2=y1; y1=0; break;
+				case END: y2=y1; y1=n-1; break;
+			}
+	if(y1>n-1){y2=n-1;y1=0;}
+	if(y1<0) {y2=0;y1=n-1;}
+	Console::ForegroundColor=ConsoleColor::Blue;
+	Console::BackgroundColor=ConsoleColor::Yellow;
+	Console::CursorLeft=41;
+	Console::CursorTop=y1+5;
+	printf("%s",dan[y1]);
+	Console::ForegroundColor=ConsoleColor::Green;
+	Console::BackgroundColor=ConsoleColor::White;
+	Console::CursorLeft=41;
+	Console::CursorTop=y2+5;
+	printf("%s",dan[y2]);
+	c=getch();
+	}
+exit(0);
+}
+void maxim(struct z* participants, int NC)
+{
+int i=0; struct z best;
+strcpy(best.name,participants[0].name);
+best.ball=participants[0].ball;
+for(i=1;i<NC;i++)
+	if (participants[i].ball>best.ball)
+		{
+		strcpy(best.name,participants[i].name);
+		best.ball=participants[i].ball;
+		}
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::White;
+Console::CursorLeft=10;
+Console::CursorTop=15;
+printf(" Максимальный балл %ld       ",best.ball);
+Console::CursorLeft=10;
+Console::CursorTop=16;
+printf(" набрал участник %s ",best.name);
+getch();
+}
+void alfalist(struct z* participants, int NC, struct sp** spisok)
+{
+int i, n;
+struct sp *nt, *z;
+n=NC;
+Console::BufferHeight=1080;
+Console::BufferWidth=1920;
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::White;
+Console::Clear();
+printf("\n Алфавитный список участников олимпиады");
+printf("            Обратный алфавитный список участников олимпиады");
+printf("\n ======================================            ===============================================\n");
+if(!*spisok)
+	for(i=0;i<NC;i++)
+		vstavka(participants,participants[i].name, NC, spisok);
+for(nt=*spisok; nt!=0; nt=nt->sled)
+	printf("\n %-20s %ld",nt->fio,nt->ball);
+for(nt=*spisok, z=0; nt!=0; z=nt, nt=nt->sled);
+	Console::CursorTop=4;
+	for(nt=z, i=0; nt!=0; i++, nt=nt->pred){
+	Console::CursorLeft=51;
+	printf("%-20s %ld",nt->fio,nt->ball);
+	Console::CursorTop+=1;}
+getch();
+}
+void vstavka(struct z* participants,char* fio, int NC, struct sp** spisok)
+{
+int i;
+struct sp *nov,*nt,*z=0;
+for(nt=*spisok; nt!=0 && strcmp(nt->fio,fio)<0; z=nt, nt=nt->sled);
+if(nt && strcmp(nt->fio,fio)==0) return;
+nov=(struct sp *) malloc(sizeof(struct sp));
+strcpy(nov->fio,fio);
+nov->sled=nt;
+nov->ball=0;
+nov->pred=z;
+for(i=0;i<NC;i++)
+	if(strcmp(participants[i].name,fio)==0)
+		nov->ball+=participants[i].ball;
+if(!z) *spisok=nov;
+else z->sled=nov;
+if(nt) nt->pred=nov;
+return;
+}
+void diagram(struct z* participants,int NC, struct sp** spisok)
+{
+struct sp *nt;
+int len,i,NColor;
+long sum = 0 ;
+char str1[20];
+char str2[20];
+System::ConsoleColor Color;
+Console::ForegroundColor=ConsoleColor::Black;
+Console::BackgroundColor=ConsoleColor::White;
+Console::Clear();
+for(i=0;i<NC;i++) sum = sum+participants[i].ball ;
+if(!*spisok)
+	for(i=0;i<NC;i++)
+		vstavka(participants,participants[i].name, NC, spisok);
+Color=ConsoleColor::Black; NColor=0;
+for(nt=*spisok,i=0; nt!=0; nt=nt->sled,i++)
+	{
+	sprintf(str1,"%s",nt->fio);
+	sprintf(str2,"%3.1f%%",(nt->ball*100./sum));
+	Console::ForegroundColor=ConsoleColor::Blue;
+	Console::BackgroundColor= ConsoleColor::White;
+	Console::CursorLeft=5; Console::CursorTop=i+1;
+	printf(str1);
+	Console::CursorLeft=20;
+	printf("%s",str2);
+	Console::BackgroundColor=++Color; NColor++;
+	Console::CursorLeft=30;
+	for(len=0; len<nt->ball*100/sum; len++) printf(" ");
+	if(NColor==14)
+		{ Color=ConsoleColor::Black; NColor=0; }
+	}
+getch();
+return ;
+}
+void listing(struct z* participants, int NC)
+{
+int i;
+struct z* nt;
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::White;
+Console::Clear();
+printf("\n\r Список участников-призеров, набравших выше 80 баллов");
+printf("\n\r=====================================================\n\r");
+for(i=0,nt=participants;i<NC;nt++,i++)
+	if (nt->ball>=80 && strcmp(nt->mesto,"Призёр")==0)
+		printf("\n\r %-20s %ld",nt->name,nt->ball);
+getch();
+}
+void kolvo(struct z *participants, int NC)
+{
+	int i,k=0;
+	for(i=0;i<NC;i++)
+		if (strcmp(participants[i].mesto,"Участник")==0)
+			k++;
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::White;
+Console::CursorLeft=10;
+Console::CursorTop=15;
+printf("Участников в олимпиаде ");
+printf("всего : %d",k);
+getch();
+}
+void klav (struct z *participants, int NC)
+{
+int i, k=0;
+char cit[30];
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::White;
+Console::CursorLeft=10;
+Console::CursorTop=15;
+printf("Введите название города: ");
+SetConsoleCP(1251); 
+gets(cit);
+SetConsoleCP(866);
+for (i=0;i<NC;i++)
+	if (strcmp(participants[i].city, cit)==0) 
+		k++;
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::Green;
+Console::Clear();
+Console::CursorLeft=11;
+Console::CursorTop=16;
+Console::BackgroundColor=ConsoleColor::White;
+printf("Количество участников из города, введённого с клавиатуры: %ld",k);
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::White;
+Console::CursorLeft=11;
+Console::CursorTop=18;
+printf ("Список участников из данного города:");
+for (i=0; i<NC; i++)
+	if(strcmp (participants[i].city, cit)==0)
+		printf ("\n\t%s",participants[i].name);
+getch();
+}
+void slozhn (struct z* participants, int NC)
+{
+int i,j;
+int flag=0;
+Console::ForegroundColor=ConsoleColor::Blue;
+Console::BackgroundColor=ConsoleColor::White;
+Console::Clear();
+for (i=0; i<NC;i++)
+{
+  for (j=i+1; j<NC; j++)
+  {
+    if ((strcmp(participants[i].mesto, participants[j].mesto)==0)&& ((strcmp(participants[i].school, participants[j].school)==0)))
+    {
+      printf("\n ФИО: %s, Место: %s, Школа: %s, --- ФИО: %s, Место: %s, Школа: %s,", participants[i].name, participants[i].mesto, participants[i].school,participants[j].name, participants[j].mesto, participants[j].school);
+        flag=1;
+      break;}
+  }
+  if (flag == 1) {break;}
+}
+if (flag == 0) {printf("Нет таких совпадений");}
+getch();
+}
